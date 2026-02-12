@@ -1,0 +1,3 @@
+[submodule "openai_smart_client"]
+	path = openai_smart_client
+	url = https://github.com/kreslavskii/openai_smart_client.git

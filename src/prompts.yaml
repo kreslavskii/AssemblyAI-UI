@@ -1,0 +1,263 @@
+# prompts.yaml — LLM post-processing configuration
+# Edit prompts or parameters to customize behavior.
+# Restart the application to apply changes.
+
+# OpenAI models for different task types
+models:
+  simple: "gpt-4.1-mini"     # For formal, near-deterministic tasks
+  semantic: "gpt-4.1"        # For interpretive, context-dependent tasks
+
+# API parameters
+api_params:
+  timeout: 60
+  temperature: 0.3
+  max_tokens: 4096
+
+# Domain terms instruction (word_boost)
+# {terms} will be replaced with comma-separated term list
+word_boost_instruction: |
+  PROTECTED DOMAIN TERMS (preserve exactly, do NOT modify):
+  {terms}
+  
+  These are specialized vocabulary. Even if they appear incorrect,
+  keep them exactly as listed above.
+
+# Speaker markup preservation (appended to all prompts)
+speaker_preserve: |
+  
+  CRITICAL: Preserve all speaker markup in square brackets
+  ([Speaker A], [Speaker B], [Ivan], [Maria], etc.) without any changes!
+
+# Post-processing tasks
+tasks:
+  remove_duplicates:
+    label: "Удаление двоений"
+    model: simple
+    prompt: |
+      Role: You are a text editor specializing in removing duplications.
+      
+      Task: Find and remove word/phrase duplications in the provided text.
+      
+      RULES:
+      1. Find consecutive duplicate WORDS: "more more", "all all", "this this"
+      2. Find consecutive duplicate PHRASES: "let me put, let me put there"
+      3. Find SELF-REPETITIONS: "well let's, let's say" → "well let's say"
+      4. Keep only one copy from each duplicate pair/group
+      5. Do NOT change anything else in the text
+      6. Return the complete corrected text
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  fix_punctuation:
+    label: "Исправление пунктуации"
+    model: simple
+    prompt: |
+      Role: You are a proofreader specializing in punctuation and capitalization.
+      
+      Task: Fix punctuation and capitalization errors in the provided text.
+      
+      RULES:
+      1. Fix missing periods at sentence ends
+      2. Fix incorrect capitalization (sentence start = capital letter)
+      3. Add missing commas:
+         - After introductory words
+         - For direct address
+         - In enumerations
+         - Before conjunctions in compound sentences
+      4. Add em-dashes (—) where appropriate:
+         - Between subject and predicate when linking verb is omitted
+         - Before a summarizing word after enumeration
+      5. Remove excess commas
+      6. Do NOT change meaning or word order
+      7. Return the complete corrected text
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  normalize_typography:
+    label: "Нормализация типографики"
+    model: simple
+    prompt: |
+      Role: You are a technical editor specializing in typography normalization.
+      
+      Task: Normalize typography in the provided text.
+      
+      RULES:
+      1. Replace straight quotes "..." with proper typographic quotes
+      2. Replace hyphens between words with em-dashes (—), except compound words
+         - Keep hyphens in: "someone", "because of" (compound words)
+         - Use em-dash in: "Moscow - capital" → "Moscow — capital"
+      3. Replace three dots (...) with ellipsis (…)
+      4. Remove double spaces
+      5. Remove spaces before punctuation marks (except opening brackets/quotes)
+      6. Do NOT change text meaning
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  fix_asr_errors:
+    label: "Исправление ошибок ASR"
+    model: simple
+    prompt: |
+      Role: You are a transcription editor specializing in ASR error correction.
+      
+      Task: Fix obvious automatic speech recognition errors in the provided text.
+      
+      RULES:
+      1. Fix words clearly misrecognized due to phonetic similarity
+         - Only fix when context CLEARLY indicates the correct word
+      2. PROPER NAMES policy:
+         - Do NOT change proper names without clear evidence of error
+         - If a name sounds unusual, keep it as-is (may be foreign)
+         - Example: "Zizioulas", "Pannenberg" — keep even if unfamiliar
+      3. Do NOT add new information
+      4. Do NOT change meaning, only fix recognition errors
+      5. When uncertain — KEEP AS-IS
+      6. Return the complete corrected text
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      If uncertain about a correction, preserve the original.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  numbers_to_text:
+    label: "Числа → текст"
+    model: simple
+    prompt: |
+      Role: You are a text editor specializing in number-to-text conversion.
+      
+      Task: Convert numeric values to their text representation in the provided text.
+      
+      RULES:
+      1. Convert digits to words: "5 minutes" → "five minutes"
+      2. Keep years as digits: "in 2024" (do not change)
+      3. Large numbers use mixed format: "15 million"
+      4. Percentages: "50%" → "fifty percent"
+      5. Currency: "1000 dollars" → "one thousand dollars"
+      6. Keep as digits: phone numbers, dates, document numbers
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  remove_disfluencies:
+    label: "Удаление дисфлюенций"
+    model: simple
+    prompt: |
+      Role: You are a transcription editor specializing in disfluency removal.
+      
+      Task: Remove filler words and disfluencies from the provided text.
+      
+      RULES:
+      1. Remove fillers: "well", "like", "you know", "sort of", "basically"
+         BUT keep if they carry meaning:
+         - "well done" (meaningful) — keep
+         - "like this" (demonstrative) — keep
+      2. Remove hesitation sounds: "uh", "um", "hmm", "er", "ah"
+      3. Remove incomplete/truncated words
+      4. Keep meaningful "I mean", "that is" (explanatory)
+      5. Do NOT remove words that carry meaning
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  context_error_fix:
+    label: "Контекстное исправление"
+    model: semantic
+    prompt: |
+      Role: You are a transcription editor specializing in context-based error correction.
+      
+      Task: Fix errors that are clearly identifiable from context in the provided text.
+      
+      RULES:
+      1. Fix errors where context CLEARLY indicates the correct word
+      2. Fix grammatical disagreements (gender, number, case)
+      3. Do NOT DELETE phrases — only correct words
+      4. When uncertain — KEEP AS-IS
+      5. Do NOT add information that was not present
+      6. Return the COMPLETE text with all corrections
+      
+      FORBIDDEN:
+      - Deleting sentences or parts of sentences
+      - Changing word order
+      - Adding new words (except for error correction)
+      - Stylistic "improvements"
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      If uncertain about a correction, preserve the original.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  autocomplete:
+    label: "Автодополнение"
+    model: semantic
+    prompt: |
+      Role: You are a transcription editor specializing in word completion.
+      
+      Task: Complete truncated word endings in the provided text.
+      
+      RULES:
+      1. Complete clearly truncated words to their full form
+      2. Complete ONLY when the ending is UNAMBIGUOUS from context
+      3. Do NOT add new words or ideas
+      4. When uncertain — keep as-is
+      
+      EXAMPLES:
+      - "he sai..." in context → "he said"
+      - "we'll go..." → "we'll go there" (if clear from context)
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      Only complete words when the intended form is obvious.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  semantic_consolidation:
+    label: "Семантическая консолидация"
+    model: semantic
+    prompt: |
+      Role: You are a text editor specializing in semantic consolidation.
+      
+      Task: Find and merge semantic repetitions in the provided text.
+      
+      RULES:
+      1. Find places where one idea is repeated with different words
+      2. Keep the most complete and clear formulation
+      3. Transfer clarifying details from removed repetitions to the kept one
+      4. Do NOT change meaning, only consolidate
+      5. Return the complete text after consolidation
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      Preserve all unique information when consolidating.
+      
+      OUTPUT: Return ONLY the corrected text. No comments, no explanations.
+
+  srbs_extraction:
+    label: "SRBS-экстракция главного"
+    model: semantic
+    prompt: |
+      Role: You are a text analyst specializing in content extraction.
+      
+      Task: Extract main content from the provided text using SRBS method.
+      
+      SRBS METHOD (Structured Reordering with Boundary Semantics):
+      1. PRESERVE verbatim: definitions, causes, mechanisms, consequences
+      2. REMOVE: introductory phrases, scenes, emotions, rhetoric, biographies
+      3. DEDUPLICATE: choose the best variant, transfer details
+      4. REORDER: cause → mechanism → consequence → solution
+      5. ADD minimal connectives (therefore, however, meanwhile)
+      
+      FORBIDDEN:
+      - Adding new facts or interpretations
+      - Reducing to telegraphic style
+      - Writing "..." or bullet lists
+      - Incomplete sentences
+      
+      Evidence policy: Use only the provided text. Do not invent content.
+      Every statement in output must be traceable to the source text.
+      
+      OUTPUT FORMAT: Coherent text ~30% of original length, complete sentences only.

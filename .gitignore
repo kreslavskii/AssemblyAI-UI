@@ -1,0 +1,28 @@
+old/
+Rules/
+.*/
+.venv/  
+venv/
+__pycache__/
+# openai_smart_client/ — git submodule, не игнорируем
+*.bat
+*.wav
+*.txt
+*.pyc
+.git
+.pytest_cache
+*.*_
+.env
+# __init__.py
+CLAUDE.md 
+STATE.md 
+Summary_Session1_code.json 
+Summary_Session1.md 
+tmp.md 
+Knowledge.md 
+FLOW.md 
+Skills_Authoring_Guide.md 
+.cursorignore
+.cursorrules
+prompts/
+Current_plan.md
