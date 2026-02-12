@@ -65,8 +65,6 @@ src/
 └── app.py           — Gradio web UI
 ```
 
-Root files: `pyproject.toml` (deps), `.env.example` (env template), `run.bat` (Windows), `Current_plan.md` (roadmap).
-
 ## Tech Stack
 
 **Python** 3.11+ · **Gradio** 6.x · **AssemblyAI SDK** · **OpenAI SDK** · **pydantic-settings**
@@ -79,15 +77,9 @@ uv run ruff format .          # format
 uv add <package>              # add dependency
 ```
 
-Style: type annotations, Google-style docstrings, Ruff (88 chars). See `CLAUDE.md`.
-
 ## Roadmap
 
-See `Current_plan.md` for active development tasks.
-
 - [ ] **Diff-view** — highlight LLM changes before/after
-- [ ] **PII redaction** — mask personal data
-- [ ] **Audio duration + cost** — show transcription cost estimate
 
 ## License
 
